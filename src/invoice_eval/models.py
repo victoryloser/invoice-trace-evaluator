@@ -67,6 +67,18 @@ class Case(InputModel):
     reference_result: dict[str, Any]
     runs: list[Run] = Field(min_length=2, max_length=2)
     scenario: str = ""
+    expected_behaviors: list[str] = Field(default_factory=list, description="计划覆盖的行为 ID；不作为实际触发或通过的证据。见 behavior-catalog 命令。")
+
+    @model_validator(mode="after")
+    def behavior_ids(self):
+        import json
+        from .resources import BEHAVIORS
+        known = {b["id"] for b in json.loads(BEHAVIORS.read_text(encoding="utf-8"))["behaviors"]}
+        if len(set(self.expected_behaviors)) != len(self.expected_behaviors):
+            raise ValueError("duplicate expected_behaviors")
+        if set(self.expected_behaviors) - known:
+            raise ValueError(f"unknown expected_behaviors: {sorted(set(self.expected_behaviors) - known)}")
+        return self
 
 class FieldValue(BaseModel):
     value: Any

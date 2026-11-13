@@ -51,5 +51,13 @@ def render_report(directory):
         if a["run_id"] not in paired:
             lines.extend(["",f"### 未成对有效运行 {a['run_id']}","",f"{a['business_result_assessment']}；处理正确 {a['agent_task_success']}，出票 {a['business_invoice_created']}，质量分 {a['quality_score']}。",f"证据：{', '.join(a['evidence_event_ids'])}"])
     lines.extend(["", "## 边界", "", "原始轨迹未改写。评测阶段状态与被评 Agent 业务成败分别保存。存在关键 unknown 或必需 Judge 失败时不发布完整 submission.jsonl。", "标签一致性与运行质量分别统计。数据划分见 configs/split.json；输入轨迹与评测器自身 trace 分开保存。", ""])
+    coverage_path = directory / "behavior_coverage.json"
+    if coverage_path.exists():
+        from .behavior import render_behavior_report
+        coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+        behavior_lines = render_behavior_report(coverage)
+        (directory / "behavior_coverage.md").write_text("\n".join(behavior_lines), encoding="utf-8")
+        lines.extend(["", "## 业务行为覆盖", "", *behavior_lines[2:behavior_lines.index("## 用例与事件映射")],
+                      "完整用例、触发条件及事件证据见 [业务行为覆盖报告](behavior_coverage.md)。", ""])
     (directory / "report.md").write_text("\n".join(lines), encoding="utf-8")
     return directory / "report.md"

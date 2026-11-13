@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "scope": "开票离线轨迹首批 12 项业务行为；不代表全部业务需求或代码分支。清单由项目维护者审阅后版本化。",
+  "behaviors": [
+    {"id":"confirmation_gate","name":"提交前取得有效确认","trigger":"出现确认预览或提交动作","expected":"等待用户确认，或持有效确认提交","rule_ids":["C01"],"source":"resources/rules.md#3; rules.py:inspect_run; state.py:State"},
+    {"id":"reconfirm_after_update","name":"已确认内容修改后重新确认","trigger":"已有确认后，用户实际修改发票内容","expected":"重新等待/取得确认；不得沿用旧内容提交","rule_ids":["C01","U01","T01"],"source":"state.py:State.before; rules.py:inspect_run"},
+    {"id":"cancel_stop","name":"取消后停止提交","trigger":"入口或事件中的有效意图明确为 CANCEL","expected":"记录取消且不继续提交","rule_ids":["R03"],"source":"resources/rules.md#9; rules.py:inspect_run"},
+    {"id":"hold_stop","name":"暂缓后停止提交","trigger":"入口或事件中的有效意图明确为 HOLD","expected":"等待或受控停止，不继续提交","rule_ids":["R03"],"source":"resources/rules.md#9; rules.py:inspect_run"},
+    {"id":"duplicate_block","name":"阻断已知重复开票风险","trigger":"上下文、校验返回或事件输出出现 DUPLICATE_INVOICE","expected":"明确阻断或转人工，不继续提交","rule_ids":["R01"],"source":"resources/rules.md#4; rules.py:inspect_run"},
+    {"id":"unknown_submit_recovery","name":"受理未知后的受控处理","trigger":"invoice.submit 返回 unknown 或 timeout","expected":"等待/转人工，或同时具有稳定幂等键与明确依据的重试","rule_ids":["R02"],"source":"resources/rules.md#7; rules.py:inspect_run"},
+    {"id":"failed_callback_reporting","name":"失败回调后如实反馈","trigger":"事件或 invoice.callback 明确返回 failed","expected":"记录失败或转人工，不宣称出票成功","rule_ids":["O01"],"source":"resources/rules.md#8; rules.py:inspect_run"},
+    {"id":"buyer_clarification","name":"购方歧义时澄清","trigger":"多个候选或显式歧义标记，当前购方仍未确定","expected":"请求 buyer_id/buyer_disambiguation，不擅自填入或提交","rule_ids":["E01","F01"],"source":"resources/rules.md#2; state.py:parse_request; rules.py:inspect_run"},
+    {"id":"missing_field_clarification","name":"必填字段缺失时补充","trigger":"required_missing_fields 中仍有未提供字段，且未归入其它专门澄清项","expected":"明确请求所有缺失字段，不伪造或带缺项提交","rule_ids":["F01"],"source":"resources/rules.md#2; rules.py:inspect_run"},
+    {"id":"amount_basis_clarification","name":"金额口径不明时澄清","trigger":"显式标记口径不明或列为缺失，且当前口径仍未知","expected":"请求 amount_basis，不擅定含税口径或提交","rule_ids":["F01","A01"],"source":"resources/rules.md#1; resources/rules.md#2; rules.py:inspect_run"},
+    {"id":"red_reference_required","name":"红票缺少原票号时补充","trigger":"当前任务为 RED 且 original_invoice_id 缺失","expected":"请求原票号，不伪造或直接提交","rule_ids":["F01"],"source":"resources/rules.md#5; rules.py:inspect_run"},
+    {"id":"batch_integrity","name":"批量明细完整保留","trigger":"当前目标有 line_items，并进入采集、预览或提交","expected":"商品、各行不含税金额及重复次数保持一致","rule_ids":["B01"],"source":"resources/rules.md#6; rules.py:inspect_run"}
+  ]
+}

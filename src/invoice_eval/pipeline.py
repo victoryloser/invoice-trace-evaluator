@@ -14,7 +14,8 @@ from .rules import RULE_LABELS, inspect_run
 from .scoring import assessment, compare
 from .decisions import reconcile, synchronize_checks
 from .acceptance import load_gate_evidence
-from .resources import OUTPUT_SCHEMA, WORKFLOW, RULES, SPLIT
+from .behavior import collect_behaviors, summarize_behaviors
+from .resources import OUTPUT_SCHEMA, WORKFLOW, RULES, SPLIT, BEHAVIORS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -30,10 +31,14 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
     rule_path = next(material.glob("07*.md")) if material else RULES
     workflow_path = next(material.glob("01*.json")) if material else WORKFLOW
     evaluation_id = uuid.uuid4().hex
+    behavior_catalog = json.loads(BEHAVIORS.read_text(encoding="utf-8"))
     manifest = {"evaluation_id": evaluation_id, "started_at": started, "command": sys.argv, "version": __version__, "source_hash": source_hash(), "input_hash": file_hash(cases_path), "input_name": Path(cases_path).name, "config_hash": file_hash(config_path), "rule_hash": file_hash(rule_path), "workflow_hash": file_hash(workflow_path), "schema_hash": file_hash(schema_path), "lock_hash": file_hash(ROOT / "requirements.lock.txt") if (ROOT / "requirements.lock.txt").exists() else None, "split": json.loads(SPLIT.read_text(encoding="utf-8")), "scoring_version": config["scoring_version"], "status": "running", "artifacts": {}}
+    manifest.update(behavior_catalog_hash=file_hash(BEHAVIORS), behavior_catalog_version=behavior_catalog["version"])
     write_json(output / "manifest.json", manifest)
+    write_json(output / "behavior_catalog.snapshot.json", behavior_catalog)
     write_json(output / "config.snapshot.json", config)
     records, findings, states, reviews, traces, checks, completed, conflicts = [], [], [], [], [], [], [], []
+    behavior_rows = []
     judge = Judge(config["judge"], output.parent / "judge-cache", digest(config), cache_policy=cache_policy)
     manifest["cache_policy"] = cache_policy
     manifest["judge"] = judge.public_config()
@@ -60,7 +65,7 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
         trace("load", "success", "strict JSONL and identity validation")
         for case in cases:
             pair = []
-            for run in case.runs:
+            for run_index, run in enumerate(case.runs):
                 begin = time.perf_counter()
                 analysis = inspect_run(case, run)
                 synchronize_checks(analysis)
@@ -76,6 +81,7 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
                         trace("judge", "success" if decision["accepted"] else "warning", decision.get("reason",result.explanation), case.case_id, run.run_id, refs=result.evidence_event_ids)
                 synchronize_checks(analysis)
                 conflicts.extend({"case_id":case.case_id,"run_id":run.run_id,**c} for c in analysis.get("conflicts",[]))
+                behavior_rows.extend(collect_behaviors(case, run, analysis, behavior_catalog, "baseline" if run_index == 0 else "candidate"))
                 if not analysis["questions"]:
                     trace("judge", "skipped", "structured facts sufficient", case.case_id, run.run_id, required=False)
                 findings.extend({"case_id": case.case_id, "run_id": run.run_id, **f.model_dump()} for f in analysis["findings"])
@@ -99,6 +105,13 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
         write_jsonl(output / "judge_results.jsonl", judge.records)
         write_json(output / "review_queue.json", reviews)
         summary = metrics(cases, records, reviews, judge.records, gate, completed=completed)
+        behavior_coverage = summarize_behaviors(behavior_rows, behavior_catalog)
+        write_json(output / "behavior_coverage.json", behavior_coverage)
+        summary["behavior_coverage"] = {
+            "catalog_version": behavior_catalog["version"],
+            **{key: behavior_coverage["overall"][key] for key in ("coverage", "passed_behaviors", "behavior_pass_rate", "run_behavior_pass_rate")},
+            "by_role": {role: {key: data[key] for key in ("coverage", "passed_behaviors", "behavior_pass_rate")} for role, data in behavior_coverage["by_role"].items()},
+        }
         write_json(output / "metrics.json", summary)
         if reviews:
             manifest.update(status="needs_review", validation={"valid": False, "reason": "unresolved decisions"})

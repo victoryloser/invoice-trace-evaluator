@@ -31,11 +31,14 @@
 | judge_results.jsonl / judge_conflicts.json | 模型判断和冲突 |
 | review_queue.json / release_evidence.json | 复核项与发布门控证据 |
 | metrics.json / report.md | 指标及报告 |
+| behavior_catalog.snapshot.json / behavior_coverage.json / behavior_coverage.md | 版本化业务行为清单、实际覆盖/通过率和用例事件映射 |
 | submission.jsonl | schema 约定的完整批次输出 |
 
 全量有效且导出校验通过后才生成 submission.jsonl。部分有效运行仍保存，不导出不完整批次。退出码 2 表示可报告的输入问题或待复核；程序错误返回非零并保留诊断。
 
 业务结果已知但根因不可定位，可使用 INSUFFICIENT_EVIDENCE 及空首错；结果未知时不预填成功值。
+
+`behavior.py` 在最终规则与语义判定之后重建行为触发与处理证据。行为覆盖和通过分别统计，清单分母固定，基线与候选分别汇总，待复核运行不丢弃。首批 12 项、计划标签及判定边界见 [业务行为覆盖](behavior-coverage.md)。本层仅产生诊断，不修改评分与发布门控。
 
 ## Judge 与缓存
 
@@ -77,5 +80,7 @@ HTML 自包含，无需应用服务。录屏输出 WebM，可用 FFmpeg 转换�
 每次评测使用新目录；锁定依赖由开发者显式更新，验证不重写 requirements.lock.txt。评测目录保存该次输入、配置及证据，便于定位和复现。
 
 新增规则覆盖时序、失败回调、重复请求及缺证据场景。接入业务系统须提供输入结构要求的两个版本轨迹及字段映射。
+
+行为面板的可选浏览器检查：安装 Playwright 后，运行 `python scripts/verify_behavior_browser.py --html runs/coverage-check.html --output .build/behavior-browser`。脚本使用本机 Edge，检查证据链接、空搜索、重置和移动端宽度；输出目录须为新目录。
 
 训练标签一致率、模型一致率、独立验收通过率分别统计。开发样例不充当独立留出集，未完成的人工复核保留待审。

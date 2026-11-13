@@ -24,6 +24,7 @@ This needs no data or model. The generated JSON Schema specifies fields, enums a
 | `reference_result` | Required object; task-specific expected terminal constraints |
 | `runs` | Exactly two runs: baseline first, candidate second |
 | `scenario` | Optional string for display and grouping |
+| `expected_behaviors` | Optional array of unique behavior IDs describing planned coverage; declarations are not execution evidence. Export IDs with `behavior-catalog`; see [behavior coverage](behavior-coverage.md). |
 
 当前不是通用任意 Agent 评测器。用户请求中的金额口径、取消和修订使用中文规则解析；复杂表述需要显式业务字段或可选语义模型。reference_result 是业务约束，不是人工根因标签；evaluate 不读取单独的专家标签文件。
 

@@ -93,6 +93,8 @@ Start-Process runs/local-timeline.html
 
 On Linux/macOS, use `.venv/bin/python` and open the HTML file in your browser. Each evaluation requires a new output directory. Search tasks, filter risks, select events and follow root-cause links to inspect evidence and field provenance.
 
+Evaluations also produce a [business behavior coverage report](docs/behavior-coverage.md). A versioned inventory of 12 behaviors separates observed coverage from passing behavior, with baseline/candidate breakdowns, planned coverage gaps and event evidence. Read `behavior_coverage.md` or follow behavior evidence links in the HTML timeline. Export the inventory without data using `python -m invoice_eval behavior-catalog`.
+
 Correctly waiting for confirmation, blocking duplicates or reporting a service failure can be **correct processing without invoice creation**. Missing critical evidence produces review items. A complete `submission.jsonl` is created only when the entire batch meets the output contract.
 
 Business traces, reference labels, customer/product records, example datasets, credentials and generated reports are excluded from Git and source archives. Existing local originals are retained. Packaged workflow definitions, rule documentation and JSON Schema are program contracts and contain no trace records. Generated timelines embed input evidence; review their contents before sharing.

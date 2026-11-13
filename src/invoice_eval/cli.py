@@ -7,7 +7,7 @@ from .loader import load_cases, read_jsonl, write_json
 from .metrics import compare_labels
 from .pipeline import ROOT, evaluate
 from .report import render_report
-from .resources import DEFAULT_CONFIG, OUTPUT_SCHEMA
+from .resources import DEFAULT_CONFIG, OUTPUT_SCHEMA, BEHAVIORS
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="开票 Agent 离线轨迹评测器")
@@ -15,6 +15,8 @@ def main(argv=None):
     subs = parser.add_subparsers(dest="command", required=True)
     schema = subs.add_parser("schema", help="Show the supported canonical input JSON Schema; no data required")
     schema.add_argument("--output", type=Path)
+    behaviors = subs.add_parser("behavior-catalog", help="Export the versioned business behavior inventory; no data required")
+    behaviors.add_argument("--output", type=Path)
     ev = subs.add_parser("evaluate")
     ev.add_argument("--cases", type=Path, required=True)
     ev.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -71,9 +73,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     load_dotenv(args.env_file or Path.cwd() / ".env", override=False)
     try:
-        if args.command == "schema":
+        if args.command in {"schema", "behavior-catalog"}:
             from .models import Case
-            value = Case.model_json_schema()
+            value = Case.model_json_schema() if args.command == "schema" else json.loads(BEHAVIORS.read_text(encoding="utf-8"))
             if args.output:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 write_json(args.output, value)

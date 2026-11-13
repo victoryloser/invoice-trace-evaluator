@@ -11,7 +11,7 @@ def main():
     with ZipFile(target) as archive:
         manifest = json.loads(archive.read("MANIFEST.json"))
         assert set(archive.namelist()) == set(manifest["files"]) | {"MANIFEST.json"}
-        assert {"README.md", "README.zh-CN.md", "LICENSE", ".github/workflows/ci.yml", "docs/data-format.md", "src/invoice_eval/resources/output.schema.json"}.issubset(manifest["files"])
+        assert {"README.md", "README.zh-CN.md", "LICENSE", ".github/workflows/ci.yml", "docs/data-format.md", "docs/behavior-coverage.md", "src/invoice_eval/resources/output.schema.json", "src/invoice_eval/resources/behaviors.json"}.issubset(manifest["files"])
         for name, item in manifest["files"].items():
             path = Path(name)
             assert not path.is_absolute() and ".." not in path.parts

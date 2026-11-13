@@ -1,0 +1,246 @@
+{
+  "schema_version": "1.0",
+  "workflow_id": "AI_INVOICE_SANDBOX",
+  "notice": "开票业务步骤、事件状态与任务类型定义；工具调用由输入轨迹提供。",
+  "supported_task_types": [
+    {
+      "code": "1",
+      "name": "蓝票"
+    },
+    {
+      "code": "2",
+      "name": "红票"
+    },
+    {
+      "code": "3",
+      "name": "批量开票"
+    }
+  ],
+  "step_statuses": [
+    "PENDING",
+    "RUNNING",
+    "WAITING_USER",
+    "WAITING_CALLBACK",
+    "SUCCEEDED",
+    "FAILED",
+    "SKIPPED",
+    "CANCELED",
+    "TIMED_OUT"
+  ],
+  "result_codes": [
+    {
+      "code": "E100",
+      "name": "进行中",
+      "terminal": false
+    },
+    {
+      "code": "E200",
+      "name": "开票成功",
+      "terminal": true
+    },
+    {
+      "code": "E400",
+      "name": "开票失败",
+      "terminal": true
+    },
+    {
+      "code": "E500",
+      "name": "任务超时",
+      "terminal": true
+    },
+    {
+      "code": "E600",
+      "name": "转人工处理",
+      "terminal": true
+    },
+    {
+      "code": "E700",
+      "name": "任务终止",
+      "terminal": true
+    },
+    {
+      "code": "E800",
+      "name": "任务取消",
+      "terminal": true,
+      "aliases": [
+        "CANCELED"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "step_id": "RECEIVE_REQUEST",
+      "name": "接收开票请求",
+      "stage": "任务接入",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "CREATE_TASK"
+      ]
+    },
+    {
+      "order": 2,
+      "step_id": "CREATE_TASK",
+      "name": "创建开票任务",
+      "stage": "任务初始化",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "RESOLVE_ENTERPRISE"
+      ]
+    },
+    {
+      "order": 3,
+      "step_id": "RESOLVE_ENTERPRISE",
+      "name": "识别销方企业",
+      "stage": "上下文识别",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "PARSE_INTENT"
+      ]
+    },
+    {
+      "order": 4,
+      "step_id": "PARSE_INTENT",
+      "name": "解析用户开票意图",
+      "stage": "意图理解",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "CANCEL_TASK",
+        "COLLECT_INVOICE_DATA"
+      ]
+    },
+    {
+      "order": 5,
+      "step_id": "COLLECT_INVOICE_DATA",
+      "name": "采集发票信息",
+      "stage": "信息采集",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "VALIDATE_DATA",
+        "WAIT_USER_SUPPLEMENT",
+        "TIMEOUT_TASK"
+      ]
+    },
+    {
+      "order": 6,
+      "step_id": "WAIT_USER_SUPPLEMENT",
+      "name": "等待用户补充信息",
+      "stage": "人机交互",
+      "required_by_default": false,
+      "possible_next_steps": [
+        "VALIDATE_DATA",
+        "CANCEL_TASK",
+        "TIMEOUT_TASK"
+      ]
+    },
+    {
+      "order": 7,
+      "step_id": "VALIDATE_DATA",
+      "name": "校验开票数据",
+      "stage": "规则校验",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "CONFIRM_INVOICE",
+        "WAIT_USER_SUPPLEMENT",
+        "TRANSFER_TO_HUMAN"
+      ]
+    },
+    {
+      "order": 8,
+      "step_id": "CONFIRM_INVOICE",
+      "name": "确认开票内容",
+      "stage": "用户确认",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "SUBMIT_INVOICE",
+        "COLLECT_INVOICE_DATA",
+        "CANCEL_TASK",
+        "TIMEOUT_TASK"
+      ]
+    },
+    {
+      "order": 9,
+      "step_id": "SUBMIT_INVOICE",
+      "name": "提交开票",
+      "stage": "开票执行",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "WAIT_INVOICE_CALLBACK",
+        "TRANSFER_TO_HUMAN",
+        "FAIL_TASK"
+      ]
+    },
+    {
+      "order": 10,
+      "step_id": "WAIT_INVOICE_CALLBACK",
+      "name": "等待开票结果回调",
+      "stage": "结果等待",
+      "required_by_default": true,
+      "possible_next_steps": [
+        "COMPLETE_TASK",
+        "FAIL_TASK",
+        "TIMEOUT_TASK"
+      ]
+    },
+    {
+      "order": 11,
+      "step_id": "COMPLETE_TASK",
+      "name": "完成任务并返回结果",
+      "stage": "任务完成",
+      "required_by_default": true,
+      "possible_next_steps": []
+    },
+    {
+      "order": 12,
+      "step_id": "FAIL_TASK",
+      "name": "记录失败并返回原因",
+      "stage": "异常终态",
+      "required_by_default": false,
+      "possible_next_steps": []
+    },
+    {
+      "order": 13,
+      "step_id": "TIMEOUT_TASK",
+      "name": "任务超时",
+      "stage": "异常终态",
+      "required_by_default": false,
+      "possible_next_steps": []
+    },
+    {
+      "order": 14,
+      "step_id": "TRANSFER_TO_HUMAN",
+      "name": "转人工处理",
+      "stage": "人工接管",
+      "required_by_default": false,
+      "possible_next_steps": []
+    },
+    {
+      "order": 15,
+      "step_id": "CANCEL_TASK",
+      "name": "取消任务",
+      "stage": "取消终态",
+      "required_by_default": false,
+      "possible_next_steps": []
+    }
+  ],
+  "event_requirement": [
+    "event_id",
+    "task_id",
+    "trace_id",
+    "seq",
+    "step_id",
+    "module",
+    "action",
+    "step_status",
+    "started_at",
+    "finished_at",
+    "duration_ms",
+    "result_code",
+    "error_code",
+    "error_message",
+    "retry_count",
+    "observed_input",
+    "observed_output",
+    "tool_calls"
+  ]
+}

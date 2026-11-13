@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "invoice-trace-evaluator"
+version = "1.1.0"
+description = "Evidence-grounded offline invoice agent evaluation"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.10,<3", "jsonschema>=4.23,<5", "Jinja2>=3.1,<4", "httpx>=0.28,<1", "python-dotenv>=1,<2"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+invoice-eval = "invoice_eval.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+invoice_eval = ["resources/*.json", "resources/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title desc">
+  <title id="title">Invoice Trace Evaluator</title>
+  <desc id="desc">Temporal evidence, root causes and agent version comparisons.</desc>
+  <rect width="1280" height="320" rx="20" fill="#102638"/>
+  <circle cx="1190" cy="40" r="240" fill="#163c4b"/>
+  <path d="M1030 115v130m0-100h82m-82 65h125" fill="none" stroke="#7ce8cf" stroke-width="4"/>
+  <g fill="#7ce8cf"><circle cx="1030" cy="115" r="8"/><circle cx="1112" cy="145" r="8"/><circle cx="1155" cy="210" r="8"/><circle cx="1030" cy="245" r="8"/></g>
+  <text x="64" y="65" font-family="Segoe UI,Arial,sans-serif" font-size="17" letter-spacing="3" fill="#7ce8cf">VICTORYLOSER / AI SYSTEMS</text>
+  <text x="60" y="145" font-family="Segoe UI,Arial,sans-serif" font-size="58" font-weight="700" fill="#f3f9fc">Invoice Trace Evaluator</text>
+  <text x="64" y="197" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#b9cddc">Temporal evidence. Root causes. Version comparisons.</text>
+  <text x="64" y="263" font-family="Segoe UI,Arial,sans-serif" font-size="18" fill="#7ce8cf">PYTHON  /  PYDANTIC  /  JSON SCHEMA  /  JINJA2</text>
+</svg>

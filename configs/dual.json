@@ -1,0 +1,88 @@
+{
+  "version": "1.0",
+  "rule_version": "1.0",
+  "scoring_version": "1.0",
+  "judge": {
+    "mode": "live",
+    "provider": "chat-completions",
+    "base_url_env": "JUDGE_BASE_URL",
+    "model_env": "JUDGE_MODEL",
+    "api_key_env": "JUDGE_API_KEY",
+    "temperature": 0,
+    "timeout": 180,
+    "max_tokens": 8192
+  },
+  "secondary_judge": {
+    "mode": "live",
+    "provider": "chat-completions",
+    "base_url_env": "SECOND_JUDGE_BASE_URL",
+    "model_env": "SECOND_JUDGE_MODEL",
+    "api_key_env": "SECOND_JUDGE_API_KEY",
+    "temperature": 0,
+    "timeout": 240,
+    "max_tokens": 16384
+  },
+  "penalties": {
+    "I01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "E01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "F01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "A01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "A02": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "P01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "B01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "U01": [
+      30,
+      "BUSINESS_RESULT"
+    ],
+    "T01": [
+      30,
+      "TOOL_CALL"
+    ],
+    "C01": [
+      50,
+      "RISK_CONTROL"
+    ],
+    "R01": [
+      50,
+      "RISK_CONTROL"
+    ],
+    "R02": [
+      50,
+      "RISK_CONTROL"
+    ],
+    "R03": [
+      50,
+      "RISK_CONTROL"
+    ],
+    "O01": [
+      40,
+      "BUSINESS_RESULT"
+    ]
+  },
+  "release_gate": {
+    "required_cases": [],
+    "independent_required_cases": [],
+    "evidence_files": []
+  }
+}

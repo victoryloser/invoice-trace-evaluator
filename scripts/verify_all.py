@@ -6,7 +6,7 @@ import sys
 
 from invoice_eval.export import validate_records
 from invoice_eval.loader import load_cases, read_jsonl, write_json, source_hash, write_jsonl
-from invoice_eval.metrics import compare_labels
+from invoice_eval.metrics import compare_labels, write_quality_report
 from invoice_eval.pipeline import evaluate
 from invoice_eval.resources import DEFAULT_CONFIG, OUTPUT_SCHEMA
 from invoice_eval.stability import stability
@@ -42,7 +42,7 @@ def main():
     stability(source, DEFAULT_CONFIG, output/"stability", 2)
     render_timeline(run, output/"timeline.html")
     if args.labels:
-        write_json(output/"label-metrics.json", compare_labels(run/"submission.jsonl", args.labels, load_cases(source)))
+        write_quality_report(compare_labels(run/"submission.jsonl", args.labels, load_cases(source)), output/"label-metrics.json")
     write_json(output/"verification.json", {"source_hash":source_hash(), "format_validation_passed":True,
                "input":"user-supplied" if args.cases else "temporary fictional records", "model_calls":False})
     print("Offline checks passed:", output)

@@ -6,7 +6,7 @@
 
 用户目标随事件更新，行为按当时已知证据判断。取消、暂缓、正常终止和开票成功分别处理；工具成功不等于业务成功，缺证据时保留未知。
 
-运行契约位于 src/invoice_eval/resources/，通过 setuptools package-data 随安装分发，不依赖 material/。该目录仅有程序配置、流程定义、规则说明和输出 schema。判定规则由 Python 实现，修改说明文档不会自动改变执行逻辑。轨迹、专家标签和档案文件保留在本地，排除 Git 与源码包。独立专家标签仅由 compare-labels 读取，evaluate 不读取该标签文件。
+运行契约位于 src/invoice_eval/resources/，通过 setuptools package-data 随安装分发，不依赖 material/。该目录仅有程序配置、流程定义、规则说明和输出 schema。判定规则由 Python 实现，修改说明文档不会自动改变执行逻辑。轨迹、专家标签和档案文件保留在本地，排除 Git 与源码包。独立专家标签仅由事后比较命令 compare-labels / compare-evaluators 读取，evaluate 不读取该标签文件。
 
 ## CLI
 
@@ -84,3 +84,7 @@ HTML 自包含，无需应用服务。录屏输出 WebM，可用 FFmpeg 转换�
 行为面板的可选浏览器检查：安装 Playwright 后，运行 `python scripts/verify_behavior_browser.py --html runs/coverage-check.html --output .build/behavior-browser`。脚本使用本机 Edge，检查证据链接、空搜索、重置和移动端宽度；输出目录须为新目录。
 
 训练标签一致率、模型一致率、独立验收通过率分别统计。开发样例不充当独立留出集，未完成的人工复核保留待审。
+
+`metrics.py` 对齐预测与参考身份，`quality.py` 计算按运行的逐类别混淆矩阵、未知支持数和 Wilson 区间；独立根因与首错匹配仍单独计数。`compare-labels` 自动写入 JSON 和 Markdown，详见 [评测器质量报告](evaluator-quality.md)。分角色结果用于观察裁判在不同版本轨迹上的表现；合并区间不假定基线与候选相互独立。
+
+`regression.py` 校验固定输入和原始产物，比较两个评测器执行目录，复用 `compare_labels` 统一计算两端质量，并记录逐运行正确性转移。详见 [固定样本版本回归](evaluator-regression.md)。对比报告写在源目录外，不改变评测流程、评分和发布门控。

@@ -112,6 +112,10 @@ The default configuration disables model calls. Semantic ambiguity can remain un
 
 ## More commands
 
+With reference labels, `python -m invoice_eval compare-labels --run runs/local --labels data/your-labels.jsonl --output runs/quality/label-metrics.json` writes JSON and Markdown [evaluator quality diagnostics](docs/evaluator-quality.md): per-label/risk support, missed risks, false alarms, 95% Wilson intervals and disagreements. Valid unpaired runs are retained; missing predictions are not counted as correct negatives. Development agreement does not replace independent acceptance.
+
+To compare evaluator versions on fixed traces, use `python -m invoice_eval compare-evaluators --old-run runs/evaluator-old --new-run runs/evaluator-new --output runs/regression/comparison.json`. Input snapshots must match and artifact hashes are verified. Optional `--labels data/your-labels.jsonl` adds correctness transitions and quality deltas; without labels, changes describe drift only. See [evaluator regression](docs/evaluator-regression.md). This compares evaluators, separately from the Agent baseline/candidate comparison within each case.
+
 ```powershell
 .venv/Scripts/python.exe -m invoice_eval report --run runs/local
 .venv/Scripts/python.exe -m invoice_eval stability --cases data/your-cases.jsonl --output runs/stability --repeats 3

@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from .export import validate_records
 from .loader import load_cases, read_jsonl, write_json
-from .metrics import compare_labels
+from .metrics import compare_labels, write_quality_report
 from .pipeline import ROOT, evaluate
 from .report import render_report
 from .resources import DEFAULT_CONFIG, OUTPUT_SCHEMA, BEHAVIORS
@@ -26,10 +26,19 @@ def main(argv=None):
     va.add_argument("--cases", type=Path, required=True)
     va.add_argument("--submission", type=Path, required=True)
     co = subs.add_parser("compare-labels")
-    co.add_argument("--submission", type=Path, required=True)
+    prediction = co.add_mutually_exclusive_group(required=True)
+    prediction.add_argument("--submission", type=Path)
+    prediction.add_argument("--run", type=Path, help="Use individual results, including valid unpaired runs; missing runs remain in the denominator")
     co.add_argument("--labels", type=Path, required=True)
     co.add_argument("--output", type=Path, required=True)
     co.add_argument("--cases",type=Path,help="Supply source cases for seq-based root matching and cancellation risk")
+    co.add_argument("--confidence", type=float, default=0.95, help="Wilson interval confidence level between 0 and 1 (default: 0.95)")
+    regression = subs.add_parser("compare-evaluators", help="Compare old/new evaluator artifacts on identical input snapshots")
+    regression.add_argument("--old-run", type=Path, required=True)
+    regression.add_argument("--new-run", type=Path, required=True)
+    regression.add_argument("--labels", type=Path, help="Optional fixed reference labels; never read by evaluate")
+    regression.add_argument("--confidence", type=float, default=0.95)
+    regression.add_argument("--output", type=Path, required=True)
     re = subs.add_parser("report")
     re.add_argument("--run", type=Path, required=True)
     ti = subs.add_parser("timeline")
@@ -90,8 +99,18 @@ def main(argv=None):
         if args.command == "validate":
             print(json.dumps(validate_records(load_cases(args.cases), read_jsonl(args.submission), OUTPUT_SCHEMA), ensure_ascii=False))
         elif args.command == "compare-labels":
-            write_json(args.output, compare_labels(args.submission, args.labels,load_cases(args.cases) if args.cases else None))
+            source = args.cases or (args.run / "cases.snapshot.jsonl" if args.run else None)
+            result = compare_labels(args.run or args.submission, args.labels, load_cases(source) if source else None,
+                                    confidence=args.confidence, prediction_format="run" if args.run else "submission")
+            markdown = write_quality_report(result, args.output)
             print(str(args.output))
+            print(str(markdown))
+        elif args.command == "compare-evaluators":
+            from .regression import compare_evaluators, write_comparison
+            result = compare_evaluators(args.old_run, args.new_run, args.labels, confidence=args.confidence)
+            markdown = write_comparison(result, args.output)
+            print(args.output)
+            print(markdown)
         elif args.command == "report":
             print(render_report(args.run))
         elif args.command == "timeline":

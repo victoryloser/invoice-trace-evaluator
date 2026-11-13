@@ -101,6 +101,22 @@ Start-Process runs/local-timeline.html
 
 支持标准 JSONL、envelope 和带业务属性的 OpenTelemetry 导出格式。适配器保留事件编号和业务证据，不执行轨迹中的工具调用。
 
+有参考标注时，可检查[评测器本身的质量](docs/evaluator-quality.md)：
+
+```powershell
+.venv/Scripts/python.exe -m invoice_eval compare-labels --run runs/local --labels data/your-labels.jsonl --output runs/quality/label-metrics.json
+```
+
+同时生成 JSON 和 Markdown，列出各错误/风险类别的样本数、漏判率、误报率、95% Wilson 区间及分歧。缺失预测单列，基线/候选分别统计；开发集一致性不等于独立验收。
+
+修改规则、提示词或模型后，可在同一批轨迹上进行[评测器版本回归](docs/evaluator-regression.md)：
+
+```powershell
+.venv/Scripts/python.exe -m invoice_eval compare-evaluators --old-run runs/evaluator-old --new-run runs/evaluator-new --labels data/your-labels.jsonl --output runs/regression/comparison.json
+```
+
+输出 JSON 和 Markdown，核对输入快照及产物哈希，保留缺失判定，列出判定翻转、分数与根因定位变化，并区分相对参考标注的修正和退步。可省略 `--labels`，此时只报告变化。这里的 old/new 是评测器版本，与 Case 内 Agent 的 baseline/candidate 分开。
+
 ## 项目结构
 
 | 目录 | 职责 |

@@ -15,6 +15,7 @@ from .scoring import assessment, compare
 from .decisions import reconcile, synchronize_checks
 from .acceptance import load_gate_evidence
 from .behavior import collect_behaviors, summarize_behaviors
+from .business_evidence import EVIDENCE_VERSION, BOUNDARY, business_evidence_report, render_business_evidence
 from .resources import OUTPUT_SCHEMA, WORKFLOW, RULES, SPLIT, BEHAVIORS
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +35,7 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
     behavior_catalog = json.loads(BEHAVIORS.read_text(encoding="utf-8"))
     manifest = {"evaluation_id": evaluation_id, "started_at": started, "command": sys.argv, "version": __version__, "source_hash": source_hash(), "input_hash": file_hash(cases_path), "input_name": Path(cases_path).name, "config_hash": file_hash(config_path), "rule_hash": file_hash(rule_path), "workflow_hash": file_hash(workflow_path), "schema_hash": file_hash(schema_path), "lock_hash": file_hash(ROOT / "requirements.lock.txt") if (ROOT / "requirements.lock.txt").exists() else None, "split": json.loads(SPLIT.read_text(encoding="utf-8")), "scoring_version": config["scoring_version"], "status": "running", "artifacts": {}}
     manifest.update(behavior_catalog_hash=file_hash(BEHAVIORS), behavior_catalog_version=behavior_catalog["version"])
+    manifest["business_evidence"] = {"version": EVIDENCE_VERSION, "scope": "offline_trace", "external_verification": "not_performed", "boundary": BOUNDARY}
     write_json(output / "manifest.json", manifest)
     write_json(output / "behavior_catalog.snapshot.json", behavior_catalog)
     write_json(output / "config.snapshot.json", config)
@@ -62,6 +64,9 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
         cases = load_cases(cases_path)
         manifest.update(expected_cases=len(cases), expected_runs=sum(len(c.runs) for c in cases))
         write_jsonl(output / "cases.snapshot.jsonl", [c.model_dump() for c in cases])
+        business_evidence = business_evidence_report(cases)
+        write_json(output / "business_evidence.json", business_evidence)
+        (output / "business_evidence.md").write_text(render_business_evidence(business_evidence), encoding="utf-8")
         trace("load", "success", "strict JSONL and identity validation")
         for case in cases:
             pair = []
@@ -105,6 +110,7 @@ def evaluate(cases_path, config_path, output, material=None, cache_policy="use")
         write_jsonl(output / "judge_results.jsonl", judge.records)
         write_json(output / "review_queue.json", reviews)
         summary = metrics(cases, records, reviews, judge.records, gate, completed=completed)
+        summary["business_evidence"] = business_evidence["summary"]
         behavior_coverage = summarize_behaviors(behavior_rows, behavior_catalog)
         write_json(output / "behavior_coverage.json", behavior_coverage)
         summary["behavior_coverage"] = {

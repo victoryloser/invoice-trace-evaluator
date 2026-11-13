@@ -175,6 +175,7 @@ def compare_evaluators(old_run, new_run, labels=None, *, confidence=0.95):
                          "指标差值为 new-old；两端 Wilson 区间不是差值置信区间，不作显著性结论。",
                          "代码、配置、规则或模型可同时变化；单次比较不能分离其因果贡献，也不能排除模型随机性。",
                          "产物哈希校验用于发现意外修改，不是签名认证；开发集回归不能替代独立验收。"]}
+    result["limits"].append("出票判定的一致或变化均基于离线记录，不代表独立核验了外部业务状态。")
     if labels is not None:
         result["reference_comparison"] = _reference_comparison(old, new, labels, confidence)
     return result

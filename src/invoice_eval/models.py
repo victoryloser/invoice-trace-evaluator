@@ -47,7 +47,7 @@ class Run(InputModel):
     trace_id: str
     events: list[Event] = Field(min_length=1)
     final_state: str
-    invoice_created: bool | None = None
+    invoice_created: bool | None = Field(default=None, description="输入报告的出票结果；属于离线记录，不代表评测器已独立查询外部服务。")
     resource_usage: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")

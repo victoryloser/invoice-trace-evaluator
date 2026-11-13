@@ -17,6 +17,11 @@ def validate_records(cases, records, schema_path):
         if {a["run_id"] for a in record["run_assessments"]} != set(runs):
             raise ValueError("run coverage mismatch")
         for a in record["run_assessments"]:
+            if "business_invoice_evidence" in a:
+                from .business_evidence import invoice_evidence
+                expected_evidence = invoice_evidence(runs[a["run_id"]])
+                if a["business_invoice_evidence"] != expected_evidence or a["business_invoice_created"] != expected_evidence["invoice_created"]:
+                    raise ValueError("business invoice evidence does not match recorded trace or verification boundary")
             events = {e.event_id for e in runs[a["run_id"]].events}
             for obj in [a, *a["root_causes"], *a["penalty_items"]]:
                 refs = obj["evidence_event_ids"]

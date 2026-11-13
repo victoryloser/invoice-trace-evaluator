@@ -1,6 +1,7 @@
 from collections import Counter
 from .loader import canonical, digest
 from .models import Finding
+from .business_evidence import invoice_evidence
 from .state import State, amounts, money, same_amounts, same_value
 
 RULE_LABELS = dict(I01="INTENT_CLASSIFICATION", E01="ENTITY_RESOLUTION", F01="FIELD_FABRICATION", A01="AMOUNT_BASIS", A02="AMOUNT_CALCULATION", P01="PRODUCT_MATCH", B01="MULTI_ITEM_OMISSION", U01="CONTEXT_UPDATE", C01="CONFIRMATION_BYPASS", R01="DUPLICATE_CONTROL", R02="TOOL_ERROR_HANDLING", R03="INTENT_CLASSIFICATION", T01="TOOL_ARGUMENT_ERROR", O01="CALLBACK_MISINTERPRETATION")
@@ -168,18 +169,10 @@ def inspect_run(case, run):
         state.after(event)
         snapshots.append(state.snapshot(event))
 
-    service_values = []
-    for event in events:
-        if event.observed_output.get("callback_status") in {"success", "failed"}:
-            service_values.append(event.observed_output["callback_status"] == "success")
-        for tool in event.tool_calls:
-            if tool.name == "invoice.callback" and tool.result.get("status") in {"success", "failed"}:
-                service_values.append(tool.result["status"] == "success")
-    if run.invoice_created is not None:
-        service_values.append(run.invoice_created)
-    created = service_values[0] if service_values and len(set(service_values)) == 1 else None
+    business_evidence = invoice_evidence(run)
+    created = business_evidence["invoice_created"]
     if created is None:
-        review.append("服务出票事实缺失或互相矛盾。")
+        review.append("轨迹中的出票记录缺失或互相矛盾；外部业务状态未核验。")
     # A truncated trace can prove a violated precondition while not revealing
     # who/which action first violated it. Preserve known outcome, unknown cause.
     if created is True and not findings and not case.context.get("user_confirmation_recorded",False) and not any(e.observed_input.get("user_confirmation") is True for e in events) and case.reference_result.get("invoice_should_exist") is False:
@@ -207,4 +200,4 @@ def inspect_run(case, run):
     if goal_amounts and derived_amounts and not same_amounts(goal_amounts, derived_amounts):
         review.append("reference_result 终态金额与用户/context及配置税率复算冲突。")
     checks = [{"rule_id": rule, "status": "fail" if any(f.rule_id == rule for f in findings) else "pass" if rule in checked else "not_applicable"} for rule in RULE_LABELS]
-    return {"findings": findings, "states": snapshots, "questions": questions, "review": review, "created": created, "checks": checks}
+    return {"findings": findings, "states": snapshots, "questions": questions, "review": review, "created": created, "business_invoice_evidence": business_evidence, "checks": checks}

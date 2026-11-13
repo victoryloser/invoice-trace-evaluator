@@ -39,7 +39,7 @@ This is not a generic agent evaluator. Request parsing uses Chinese invoice patt
 | `task_id`, `trace_id` | Required strings identifying this run's task and trace |
 | `events` | At least one event |
 | `final_state` | Required string; observed end state, compared with task constraints |
-| `invoice_created` | Optional boolean/null; service fact, not a predicted answer |
+| `invoice_created` | Optional boolean/null; input-reported invoice outcome, not independently verified service state |
 | `resource_usage` | Optional object; input-reported usage, not verified production costs |
 
 ## 事件 / Events
@@ -61,6 +61,8 @@ This is not a generic agent evaluator. Request parsing uses Chinese invoice patt
 每个工具记录包含 `name`（string）、`arguments`（object）、`result`（object），以及可选 `attempt`（integer ≥1，默认1）。这些是已发生的调用记录，评测器不会执行工具。
 
 Each recorded tool call has `name` (string), `arguments` (object), `result` (object), and optional `attempt` (integer ≥1, default 1). The evaluator never executes recorded calls.
+
+出票来源及外部核验边界见 [业务证据说明](business-evidence.md)。`business_invoice_created` 表示记录支持的出票判断；运行摘要和回调都属于输入证据。`evaluate` 自动导出 `business_evidence.json/.md`，缺失或冲突保留未知，独立外部核验标记为 `not_performed`。输入中的额外“已核验”声明不会被当作程序已完成外部查询。
 
 常用业务步骤包括 `PARSE_INTENT`、`COLLECT_INVOICE_DATA`、`VALIDATE_DATA`、`CONFIRM_INVOICE`、`SUBMIT_INVOICE`、`WAIT_INVOICE_CALLBACK` 和终态步骤。完整流程定义见 [workflow.json](../src/invoice_eval/resources/workflow.json)。结果码与步骤成功不能单独证明实际出票。
 

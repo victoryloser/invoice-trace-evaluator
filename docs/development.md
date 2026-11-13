@@ -32,6 +32,7 @@
 | review_queue.json / release_evidence.json | 复核项与发布门控证据 |
 | metrics.json / report.md | 指标及报告 |
 | behavior_catalog.snapshot.json / behavior_coverage.json / behavior_coverage.md | 版本化业务行为清单、实际覆盖/通过率和用例事件映射 |
+| business_evidence.json / business_evidence.md | 全部运行的出票来源、记录冲突及独立外部核验边界 |
 | submission.jsonl | schema 约定的完整批次输出 |
 
 全量有效且导出校验通过后才生成 submission.jsonl。部分有效运行仍保存，不导出不完整批次。退出码 2 表示可报告的输入问题或待复核；程序错误返回非零并保留诊断。
@@ -88,3 +89,5 @@ HTML 自包含，无需应用服务。录屏输出 WebM，可用 FFmpeg 转换�
 `metrics.py` 对齐预测与参考身份，`quality.py` 计算按运行的逐类别混淆矩阵、未知支持数和 Wilson 区间；独立根因与首错匹配仍单独计数。`compare-labels` 自动写入 JSON 和 Markdown，详见 [评测器质量报告](evaluator-quality.md)。分角色结果用于观察裁判在不同版本轨迹上的表现；合并区间不假定基线与候选相互独立。
 
 `regression.py` 校验固定输入和原始产物，比较两个评测器执行目录，复用 `compare_labels` 统一计算两端质量，并记录逐运行正确性转移。详见 [固定样本版本回归](evaluator-regression.md)。对比报告写在源目录外，不改变评测流程、评分和发布门控。
+
+`business_evidence.py` 是出票记录推导与来源报告的共同入口。`rules.py` 读取其结论，评分保留来源说明，导出校验核对说明与原始输入一致。全部运行的证据报告在轨迹加载后生成，不因某条运行进入复核而丢失。外部核验当前为 `not_performed`；详见 [出票证据边界](business-evidence.md)。

@@ -10,7 +10,9 @@
 
 [![Checks](https://github.com/victoryloser/invoice-trace-evaluator/actions/workflows/ci.yml/badge.svg)](https://github.com/victoryloser/invoice-trace-evaluator/actions/workflows/ci.yml) · `Python 3.11` · `Pydantic` · `JSON Schema` · `Jinja2` · [MIT](LICENSE)
 
-分析开票 Agent 的离线运行记录，判断业务处理是否正确、发票是否实际生成，定位独立根因及其传播路径，并比较两个版本的表现。
+分析开票 Agent 的离线运行记录，判断业务处理是否正确、轨迹是否记录出票，定位独立根因及其传播路径，并比较两个版本的表现。
+
+出票结论依据输入摘要和回调记录，外部业务状态未独立核验。每次评测自动生成[出票证据来源报告](docs/business-evidence.md)，逐条列出字段路径、事件编号及记录冲突；HTML 支持跳转查看来源。本程序不查询开票服务或账本。
 
 ## 界面预览
 

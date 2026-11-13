@@ -12,6 +12,8 @@
 
 An offline evaluator for invoice-agent traces. Reconstruct temporal state, check business constraints, separate independent root causes from propagation, and compare baseline and candidate runs using event-level evidence. A self-contained HTML timeline lets you inspect findings and their sources.
 
+Invoice creation means **supported by recorded trace evidence**, not independently verified service state. Evaluations export [business evidence provenance](docs/business-evidence.md), distinguish missing/conflicting records, and explicitly mark external verification as not performed. No invoice service or ledger is queried.
+
 ## Features
 
 | Feature | Behavior |

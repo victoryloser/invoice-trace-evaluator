@@ -17,6 +17,7 @@ def metrics(cases, records, reviews, judge_records, gate, completed=None):
         for r in c.runs:
             result["simulated_agent_usage"].append({"run_id": r.run_id, **r.resource_usage})
     result["paired_runs"]=len(records)*2
+    result["service_created"].update(evidence_scope="offline_trace", external_verification="not_performed")
     result["unpaired_valid_runs"]=len(assessments)-len(records)*2
     evidence=gate.get("verified_evidence",{})
     result["release_evidence"]={"verified":evidence.get("verified",False),"errors":evidence.get("errors",[]),"evidence_ids":[x["evidence_id"] for x in evidence.get("evidence",[])]}
@@ -30,7 +31,7 @@ def render_report(directory):
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     summary = json.loads((directory / "metrics.json").read_text(encoding="utf-8"))
     records = read_jsonl(directory / "assessments.jsonl") if (directory / "assessments.jsonl").stat().st_size else []
-    lines = ["# 开票 Agent 离线版本评测报告", "", f"运行：`{manifest['evaluation_id']}`；源码：`{manifest['source_hash']}`。", "", f"输入 {summary['input_cases']} Case / {summary['input_runs']} run；完整有效 {summary['valid_cases']} Case / {summary['valid_runs']} run；覆盖 {summary['coverage']:.1%}。", f"待复核或失败 run：{summary['failed_or_review_runs']}。批量建议：**{summary['release_recommendation']}**。", "", f"处理正确 {summary['agent_correct']['numerator']}/{summary['agent_correct']['denominator']}（总输入分母 {summary['input_runs']}）；服务出票 {summary['service_created']['numerator']}/{summary['service_created']['denominator']}。", f"严重风险 run：{summary['high_risk_runs']}；平均质量分：{summary['mean_quality_score']}。", "", "以上比例描述业务处理与服务出票情况；质量分按配置中的规则和扣分权重计算。", "", f"Judge 请求 {summary['judge_calls']}；有效 live 判断 {summary['valid_live_judgments']}；缓存 {summary['live_cache_hits']}。", f"评测器本次模型用量：{summary['judge_usage']}。Agent 资源统计来自输入轨迹，见 metrics.json；评测器不核实这些计量值。", "", "| Case | A 分数/处理/出票 | B 分数/处理/出票 | 方向 | 建议 |", "|---|---|---|---|---|"]
+    lines = ["# 开票 Agent 离线版本评测报告", "", f"运行：`{manifest['evaluation_id']}`；源码：`{manifest['source_hash']}`。", "", f"输入 {summary['input_cases']} Case / {summary['input_runs']} run；完整有效 {summary['valid_cases']} Case / {summary['valid_runs']} run；覆盖 {summary['coverage']:.1%}。", f"待复核或失败 run：{summary['failed_or_review_runs']}。批量建议：**{summary['release_recommendation']}**。", "", f"处理正确 {summary['agent_correct']['numerator']}/{summary['agent_correct']['denominator']}（总输入分母 {summary['input_runs']}）；轨迹记录出票 {summary['service_created']['numerator']}/{summary['service_created']['denominator']}。", f"严重风险 run：{summary['high_risk_runs']}；平均质量分：{summary['mean_quality_score']}。", "", "以上比例描述离线轨迹支持的业务处理与出票判断；未独立核验开票服务或账本。质量分按配置中的规则和扣分权重计算。", "", f"Judge 请求 {summary['judge_calls']}；有效 live 判断 {summary['valid_live_judgments']}；缓存 {summary['live_cache_hits']}。", f"评测器本次模型用量：{summary['judge_usage']}。Agent 资源统计来自输入轨迹，见 metrics.json；评测器不核实这些计量值。", "", "| Case | A 分数/处理/记录出票 | B 分数/处理/记录出票 | 方向 | 建议 |", "|---|---|---|---|---|"]
     for r in records:
         a, b = r["run_assessments"]
         fmt = lambda x: f"{x['quality_score']} / {x['agent_task_success']} / {x['business_invoice_created']}"
@@ -40,7 +41,7 @@ def render_report(directory):
     for r in records:
         lines.extend([f"### {r['case_id']}", "", r["version_comparison"]["reason"], ""])
         for a in r["run_assessments"]:
-            lines.append(f"- **{a['run_id']}**：{a['business_result_assessment']} 出票：{a['business_invoice_created']}。")
+            lines.append(f"- **{a['run_id']}**：{a['business_result_assessment']} 轨迹记录出票：{a['business_invoice_created']}。")
             for root in a["root_causes"]:
                 lines.append(f"  - {root['label']}，首错 `{root['first_fault_event_id']}`；{root['explanation']} 证据：{', '.join(root['evidence_event_ids'])}。")
             lines.append(f"  - 传播：{a['downstream_impact']}")
@@ -49,9 +50,20 @@ def render_report(directory):
     for row in all_runs:
         a=row["assessment"]
         if a["run_id"] not in paired:
-            lines.extend(["",f"### 未成对有效运行 {a['run_id']}","",f"{a['business_result_assessment']}；处理正确 {a['agent_task_success']}，出票 {a['business_invoice_created']}，质量分 {a['quality_score']}。",f"证据：{', '.join(a['evidence_event_ids'])}"])
+            lines.extend(["",f"### 未成对有效运行 {a['run_id']}","",f"{a['business_result_assessment']}；处理正确 {a['agent_task_success']}，轨迹记录出票 {a['business_invoice_created']}，质量分 {a['quality_score']}。",f"证据：{', '.join(a['evidence_event_ids'])}"])
     lines.extend(["", "## 边界", "", "原始轨迹未改写。评测阶段状态与被评 Agent 业务成败分别保存。存在关键 unknown 或必需 Judge 失败时不发布完整 submission.jsonl。", "标签一致性与运行质量分别统计。数据划分见 configs/split.json；输入轨迹与评测器自身 trace 分开保存。", ""])
     coverage_path = directory / "behavior_coverage.json"
+    business_path = directory / "business_evidence.json"
+    if business_path.exists():
+        from .business_evidence import render_business_evidence
+        business = json.loads(business_path.read_text(encoding="utf-8"))
+        (directory / "business_evidence.md").write_text(render_business_evidence(business), encoding="utf-8")
+        evidence_summary = business["summary"]
+        lines.extend(["", "## 出票证据与外部核验", "", business["boundary"],
+                      f"全部输入：记录出票 {evidence_summary['trace_created']}、记录未出票 {evidence_summary['trace_not_created']}、缺失或冲突 {evidence_summary['trace_unknown']}；独立外部核验 0/{evidence_summary['input_runs']}。外部真实出票数未知。",
+                      "逐条来源、字段路径和事件编号见 [出票证据报告](business_evidence.md)。", ""])
+    else:
+        lines.extend(["", "## 出票证据与外部核验", "", "此历史产物未保存逐条出票来源说明。出票字段来自离线记录，不应解释为已独立核验外部业务状态。", ""])
     if coverage_path.exists():
         from .behavior import render_behavior_report
         coverage = json.loads(coverage_path.read_text(encoding="utf-8"))

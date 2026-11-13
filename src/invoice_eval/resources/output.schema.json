@@ -17,7 +17,8 @@
         "properties": {
           "run_id": {"type": "string", "minLength": 1},
           "agent_task_success": {"type": "boolean"},
-          "business_invoice_created": {"type": "boolean"},
+          "business_invoice_created": {"type": "boolean", "description": "由离线输入摘要和回调记录推导的出票判断；不是独立查询外部开票服务或账本的结果。"},
+          "business_invoice_evidence": {"type": "object", "description": "可选的出票来源说明：离线记录、字段路径、冲突状态与外部核验边界；外部核验未执行时必须保留未知。"},
           "quality_score": {"type": "number", "minimum": 0, "maximum": 100},
           "business_result_assessment": {"type": "string", "minLength": 1},
           "process_assessment": {"type": "string", "minLength": 1},

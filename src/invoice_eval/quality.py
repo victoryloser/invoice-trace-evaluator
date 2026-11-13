@@ -157,4 +157,5 @@ def render_quality_report(result):
     integrity = result["input_integrity"]
     lines.append(f"- 未标注的预测 Case：{len(integrity['unlabeled_prediction_cases'])}；未标注的预测 run：{len(integrity['unlabeled_prediction_runs'])}。单列记录，不擅自当作误报样本。")
     lines.append("- 本报告检查评测器与给定参考标注的一致性；不自动证明参考标注正确或满足独立验收要求。原始证据与定位分歧见 JSON 中的 quality.run_results、disagreements 和 provenance。")
+    lines.append("- business_invoice_created 的一致性仅比较轨迹判定与参考标注；不代表本程序独立查询或核验过外部开票服务。")
     return "\n".join(lines) + "\n"
